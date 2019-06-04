@@ -1,0 +1,17 @@
+{
+  "name": "cli_testings",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@types/inquirer": "^6.0.2",
+    "@types/jsonwebtoken": "^8.3.2",
+    "inquirer": "^6.3.1",
+    "inquirer-autocomplete-prompt": "^1.0.1",
+    "jsonwebtoken": "^8.5.1"
+  },
+  "devDependencies": {
+    "typescript": "^3.4.5"
+  }
+}
