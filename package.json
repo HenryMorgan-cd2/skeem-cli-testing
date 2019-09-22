@@ -4,11 +4,19 @@
   "main": "index.js",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "watch": "tsc --project tsconfig.json --watch",
+    "start": "node dist/index.js"
+  },
   "dependencies": {
+    "@types/ansi": "^0.3.2",
     "@types/inquirer": "^6.0.2",
     "@types/jsonwebtoken": "^8.3.2",
+    "@types/node": "^12.7.5",
+    "ansi": "^0.3.1",
     "inquirer": "^6.3.1",
     "inquirer-autocomplete-prompt": "^1.0.1",
+    "json-stringify-pretty-compact": "^2.0.0",
     "jsonwebtoken": "^8.5.1"
   },
   "devDependencies": {

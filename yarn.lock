@@ -2,6 +2,13 @@
 # yarn lockfile v1
 
 
+"@types/ansi@^0.3.2":
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/@types/ansi/-/ansi-0.3.2.tgz#bc682aedab84896668e413e87488dfc103937124"
+  integrity sha512-Oqf29lbsFXOgyg6Y3ffbNsERdoWwZAS7LUMZMts44aLIkG//UUy+2uSEV7vEaFi0aJeadIykKPza5QyyDii9Nw==
+  dependencies:
+    "@types/node" "*"
+
 "@types/inquirer@^6.0.2":
   version "6.0.2"
   resolved "https://registry.yarnpkg.com/@types/inquirer/-/inquirer-6.0.2.tgz#2a1fdc089cc65a485c7410bc32e3fc41afcfa2c7"
@@ -21,6 +28,11 @@
   version "12.0.2"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-12.0.2.tgz#3452a24edf9fea138b48fad4a0a028a683da1e40"
   integrity sha512-5tabW/i+9mhrfEOUcLDu2xBPsHJ+X5Orqy9FKpale3SjDA17j5AEpYq5vfy3oAeAHGcvANRCO3NV3d2D6q3NiA==
+
+"@types/node@^12.7.5":
+  version "12.7.5"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.7.5.tgz#e19436e7f8e9b4601005d73673b6dc4784ffcc2f"
+  integrity sha512-9fq4jZVhPNW8r+UYKnxF1e2HkDWOWKM5bC2/7c9wPV835I0aOrVbS/Hw/pWPk2uKrNXQqg9Z959Kz+IYDd5p3w==
 
 "@types/through@*":
   version "0.0.29"
@@ -50,6 +62,11 @@ ansi-styles@^3.2.1:
   integrity sha512-VT0ZI6kZRdTh8YyJw3SMbYm/u+NqfsAxEpWO0Pf9sq8/e94WxxOpPKx9FR1FlyCtOVDNOQ+8ntlqFxiRc+r5qA==
   dependencies:
     color-convert "^1.9.0"
+
+ansi@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/ansi/-/ansi-0.3.1.tgz#0c42d4fb17160d5a9af1e484bace1c66922c1b21"
+  integrity sha1-DELU+xcWDVqa8eSEus4cZpIsGyE=
 
 buffer-equal-constant-time@1.0.1:
   version "1.0.1"
@@ -172,6 +189,11 @@ is-promise@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/is-promise/-/is-promise-2.1.0.tgz#79a2a9ece7f096e80f36d2b2f3bc16c1ff4bf3fa"
   integrity sha1-eaKp7OfwlugPNtKy87wWwf9L8/o=
+
+json-stringify-pretty-compact@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/json-stringify-pretty-compact/-/json-stringify-pretty-compact-2.0.0.tgz#e77c419f52ff00c45a31f07f4c820c2433143885"
+  integrity sha512-WRitRfs6BGq4q8gTgOy4ek7iPFXjbra0H3PmDLKm2xnZ+Gh1HUhiKGgCZkSPNULlP7mvfu6FV/mOLhCarspADQ==
 
 jsonwebtoken@^8.5.1:
   version "8.5.1"
