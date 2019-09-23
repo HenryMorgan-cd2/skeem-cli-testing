@@ -1,148 +1,139 @@
-import ansi from "ansi"
 import { appendFileSync, writeFileSync } from "fs"
-const cursor = ansi(process.stdout)
+import stringify from "json-stringify-pretty-compact"
+import { BufferedLogger } from "./BufferedLogger"
+import chalk from "chalk"
+import { Line } from "./Line"
 
-const debug = (...data) => appendFileSync("./debug.txt", `${JSON.stringify(data)}\n`)
+export const debugLog = (...data) => appendFileSync("./debug.txt", `${stringify(data)}\n`)
 writeFileSync("./debug.txt", ``)
+
+debugLog(`Hello${chalk.red("World")}!`)
+
 export interface IKey {
   str: string
   sequence: string
-  name: "backspace" | "up" | "down" | "left" | "right" | "return"
+  name: "backspace" | "up" | "down" | "left" | "right" | "return" | "pageup" | "pagedown"
   ctrl: boolean
   meta: boolean
   shift: boolean
   isChar: boolean
 }
 
-export abstract class Line {
-  cli: Cli
-  isActive = false
-
-  setActive(state) {
-    this.isActive = state
-  }
-
-  handleInput(key: IKey) {}
-
-  onAfterMount() {}
-  onUnmount() {}
-  abstract render(): string
-}
+let key = 0
+export const getKey = () => key++
 
 export class Cli {
-  clearScreen: boolean
   debug: boolean
+  showHidden: boolean
   lines: Line[] = []
-  activeLineIndex = 0
+  activeLine: Line
   scrollPos = 0
+  globalState = {} as any
 
   constructor({
     debug = false,
-    clearScreen = true,
-    lines = []
+    showHidden = false,
+    lines = [],
+    activeIndex = "start",
+    initialState = {}
   }: {
     debug?: boolean
-    clearScreen?: boolean
+    showHidden?: boolean
     lines?: Line[]
+    activeIndex?: "start" | "end" | number
+    initialState?: any
   }) {
-    this.registerLines(lines)
-    this.lines = lines
-    this.clearScreen = clearScreen
+    lines.forEach(line => this.addLine(line))
+
     this.debug = debug
+    this.showHidden = showHidden
+    this.globalState = initialState
+    if (activeIndex === "start") {
+      this.setActiveLine(this.lines[0])
+    } else if (activeIndex === "end") {
+      this.setActiveLine(this.visibleLines[this.visibleLines.length - 1])
+    } else {
+      this.setActiveLine(this.visibleLines[activeIndex])
+    }
   }
 
   get height() {
-    return this.debug ? process.stdout.rows - 5 : process.stdout.rows
+    return this.debug ? process.stdout.rows - 10 : process.stdout.rows
   }
 
   registerLines(lines: Line[]) {
     lines.forEach(line => (line.cli = this))
   }
 
-  moveActiveLine(delta: number) {
-    this.changeActiveLineIndex(this.activeLineIndex + delta)
+  get activeLineIndex() {
+    return this.visibleLines.indexOf(this.activeLine)
   }
-  changeActiveLineIndex(to: number, opts: { scroll?: "middle" | "visible" } = {}) {
-    this.activeLineIndex = to
 
-    // clamp index between 0 and line
-    if (this.activeLineIndex < 0) {
-      this.activeLineIndex = 0
-    } else if (this.activeLineIndex >= this.lines.length) {
-      this.activeLineIndex = this.lines.length - 1
+  moveActiveLine(delta: number) {
+    this.setActiveLine(this.visibleLines[this.activeLineIndex + delta])
+  }
+  setActiveLine(line: undefined | Line, opts: { scroll?: "middle" | "visible" } = {}) {
+    if (!line) {
+      return
     }
+    this.activeLine = line
 
     // update which line is active
     this.lines.filter(line => line.setActive).forEach((line, i) => line.setActive(false))
-    const newCurrent = this.lines[this.activeLineIndex]
-    if (newCurrent.setActive) {
-      this.lines[this.activeLineIndex].setActive(true)
+    if (line.setActive) {
+      line.setActive(true)
     }
 
     const scrollTop = this.scrollPos
     const scrollBottom = this.scrollPos + this.height - 1
 
-    debug("checking scroll")
+    debugLog("checking scroll")
     //set scroll position
     if (opts.scroll === "middle") {
       this.scrollPos = this.activeLineIndex - this.height / 2
     } else {
       if (scrollTop > this.activeLineIndex) {
-        debug("scrolling up")
+        debugLog("scrolling up")
         this.scrollPos = this.activeLineIndex
       } else if (scrollBottom < this.activeLineIndex) {
-        debug("scrolling down", this.scrollPos, this.activeLineIndex)
+        debugLog("scrolling down", this.scrollPos, this.activeLineIndex)
         this.scrollPos = this.activeLineIndex - this.height + 1
       }
     }
 
+    this.clampScrolling()
+  }
+
+  clampScrolling() {
+    const activePos = this.visibleLines.indexOf(this.activeLine) + 1
+    if (activePos > this.scrollPos + this.height) {
+      this.scrollPos = activePos
+    }
+
+    const maxScrollTop = Math.max(this.visibleLines.length - this.height, 0)
     // clamp scrolling
-    if (this.scrollPos > this.lines.length) {
-      this.scrollPos = this.lines.length - this.height
+    if (this.scrollPos > maxScrollTop) {
+      this.scrollPos = maxScrollTop
     }
     if (this.scrollPos < 0) {
       this.scrollPos = 0
     }
   }
-  setActiveLine(line: Line) {
-    const idx = this.lines.indexOf(line)
-    if (idx === -1) {
-      throw "that line is not on the screen"
-    } else {
-      this.changeActiveLineIndex(idx, { scroll: "middle" })
-    }
-  }
 
-  addLinesAfter(line: Line, lines: Line[]) {
-    const idx = this.lines.indexOf(line)
-    if (idx === -1) {
-      throw "that line is not on the screen"
-    } else {
-      lines.forEach((line, i) => {
-        this.addLine(line, idx + i + 1)
-      })
-    }
-  }
-
-  addLine(line: Line, index: number) {
+  addLine(line: Line) {
     if (this.lines.includes(line)) {
       throw "trying to add line that is already mounted"
     }
     this.registerLines([line])
-    this.lines.splice(index, 0, line)
+    this.lines.push(line)
+    line.children.forEach((line, i) => this.addLine(line))
     line.onAfterMount()
   }
-  removeLines(lines: Line[]) {
-    lines.forEach(line => {
-      this.removeLine(line)
-    })
-  }
-  removeLine(line: Line) {
-    const idx = this.lines.indexOf(line)
-    if (idx > -1) {
-      line.onUnmount()
-      this.lines.splice(idx, 1)
-    }
+
+  setState(newState) {
+    this.globalState = newState
+    this.lines.forEach(line => line.onGlobalStateChange(newState))
+    this.reRender()
   }
 
   handleKeyPress(str, key: IKey) {
@@ -153,45 +144,145 @@ export class Cli {
       this.moveActiveLine(-1)
     } else if (key.name === "down") {
       this.moveActiveLine(1)
+    } else if (key.name === "pageup") {
+      this.setActiveLine(this.visibleLines[0])
+    } else if (key.name === "pagedown") {
+      this.setActiveLine(this.visibleLines[this.visibleLines.length - 1])
     } else {
-      const line = this.lines[this.activeLineIndex]
+      const line = this.visibleLines[this.activeLineIndex]
       if (line.handleInput) {
         line.handleInput(key)
       }
     }
 
-    this.renderScreen()
+    debugLog("want to render")
+
+    this.reRender()
   }
 
-  renderScreen() {
-    if (this.clearScreen) {
-      console.clear()
-      process.stdout.write("\x1b[3J")
+  get visibleLines() {
+    if (this.showHidden) {
+      return this.lines
     } else {
-      console.log()
-      console.log(" ============================================ ")
-      console.log()
-    }
-
-    const linesToRender = this.lines.slice(this.scrollPos, this.scrollPos + this.height)
-
-    linesToRender.map((line, i) => {
-      if (i + this.scrollPos === this.activeLineIndex) {
-        cursor.write("> ")
-      } else {
-        cursor.write("  ")
-      }
-      if (line.render) {
-        const content = line.render()
-        console.log(line.render())
-      } else {
-        throw "line must define a render method"
-      }
-    })
-    if (this.debug) {
-      console.log()
-      console.log()
-      console.log({ scroll: this.scrollPos, index: this.activeLineIndex })
+      const hidden = this.hiddenLines
+      return this.lines.filter(line => !hidden.includes(line))
     }
   }
+
+  get hiddenLines() {
+    return this.lines.filter(
+      line => line !== this.activeLine && line.hidden // &&
+      // this.getAllChildren(line).every(child => child.hidden)
+      // (line.hidden || this.getParents(line).some(line => line.hidden && line !== this.activeLine))
+    )
+  }
+
+  getParents(line: Line) {
+    const cache = new Map()
+
+    if (!cache.has(line)) {
+      debugLog("missed cache for line", line)
+      const parents = []
+      if (line.parent) {
+        parents.push(line.parent, ...this.getParents(line.parent))
+      }
+      cache.set(line, parents)
+    }
+    return cache.get(line)!
+  }
+
+  allChildrenCache = new Map()
+  getAllChildren(line: Line) {
+    if (!this.allChildrenCache.has(line)) {
+      const children = line.children
+      if (line.parent) {
+        line.children.forEach(child => {
+          children.push(...this.getAllChildren(child))
+        })
+      }
+      this.allChildrenCache.set(line, children)
+    }
+    return this.allChildrenCache.get(line)!
+  }
+
+  logger = new BufferedLogger()
+  renderCache = {}
+
+  async reRender() {
+    await 1
+
+    const screenBuffer = this.logger.newBuffer()
+    const key = Math.random()
+    debugLog("rerender")
+    time("full render", () => {
+      time("  clamp scrolling", () => {
+        this.clampScrolling()
+      })
+
+      // console.clear()
+      // process.stdout.write("\x1b[3J")
+      let linesToRender
+      time("  visible lines", () => {
+        linesToRender = this.visibleLines.slice(this.scrollPos, this.scrollPos + this.height)
+      })
+      // await 1
+      time("  render all", () => {
+        const text = linesToRender.map((line, i) => {
+          if (line.changed === false && line.key in this.renderCache) {
+            // return this.renderCache[line.key]
+          }
+          let str = ""
+          if (i + this.scrollPos === this.activeLineIndex) {
+            str += `> `
+          } else {
+            str += `  `
+          }
+          if (this.debug) {
+            str += `${line.key} | `
+          }
+          if (line.render) {
+            time(`    render ${line.key} ${line.constructor.name}`, () => {
+              str += line.render()
+              line.changed = false
+            })
+          } else {
+            throw "line must define a render method"
+          }
+          this.renderCache[line.key] = str
+
+          if (this.showHidden && line.hidden) {
+            str = chalk.dim(str)
+          }
+          return str
+        })
+        screenBuffer.print(text.join("\n"))
+      })
+
+      if (this.debug) {
+        screenBuffer.println("")
+        screenBuffer.println("")
+        screenBuffer.println(
+          JSON.stringify({
+            active: this.activeLine.key,
+            scroll: this.scrollPos,
+            height: this.height,
+            potentialHeight: this.visibleLines.length,
+            activePos: this.visibleLines.indexOf(this.activeLine),
+            maxScrollTop: Math.max(this.visibleLines.length - this.height, 0)
+          })
+        )
+      }
+
+      time("  flush", () => {
+        screenBuffer.flush()
+      })
+      debugLog("DONE", key)
+    })
+  }
+}
+
+function time(name, cb) {
+  // const start = process.hrtime()
+  cb()
+  // debugLog(`time ${name}`, prettyTime(process.hrtime(start)))
 }

@@ -17,7 +17,9 @@
     "inquirer": "^6.3.1",
     "inquirer-autocomplete-prompt": "^1.0.1",
     "json-stringify-pretty-compact": "^2.0.0",
-    "jsonwebtoken": "^8.5.1"
+    "jsonwebtoken": "^8.5.1",
+    "nanoseconds": "^1.0.1",
+    "pretty-time": "^1.1.0"
   },
   "devDependencies": {
     "typescript": "^3.4.5"
