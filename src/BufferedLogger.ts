@@ -14,17 +14,17 @@ export class BufferedLogger {
       println(text: string) {
         fullText += `${text}\n`
       },
-      flush: () => {
-        this.flush(fullText)
+      flush: (opts: { full?: boolean } = {}) => {
+        this.flush(fullText, opts)
         fullText = ""
       }
     }
   }
 
-  flush(text: string) {
+  flush(text: string, opts: { full?: boolean } = {}) {
     const lines = text.replace(/\n$/, "").split("\n")
 
-    if (this.lastLines) {
+    if (!opts.full && this.lastLines) {
       const diff = lines.reduce(
         (acc, line, i) => {
           const lastLine = this.lastLines[i]
