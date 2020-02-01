@@ -93,3 +93,7 @@ export function matches(haystack, needle) {
   highlighted += seach.slice(index)
   return highlighted.split("$")
 }
+
+export function arrayWrap<T>(el: T | T[]): T[] {
+  return Array.isArray(el) ? el : [el]
+}
