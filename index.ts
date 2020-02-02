@@ -14,27 +14,26 @@ process.stdin.on("keypress", (str: string, key) => {
 async function run() {
 
 
-  const results = await runForm([
-    { type: "string", name: "name", validations: { presence: true } },
-    { type: "string", name: "body" },
-    { type: "boolean", name: "published" },
-    {
-      type: "select",
-      name: "color",
-      options: ["green", "blue", "yellow"],
-    },
-    { type: "space" },
-    {
-      type: "button", name: "Submit", onClick(context: any) {
-        context.submit()
+  const results = await runForm<{ submitted: false } | { submitted: true, data: any }>({
+    debug: true,
+    fields: [
+      { type: "string", name: "name", validations: { presence: true } },
+      { type: "string", name: "body" },
+      { type: "boolean", name: "published" },
+      {
+        type: "select",
+        name: "color",
+        options: ["green", "blue", "yellow"],
+      },
+      { type: "space" },
+      { type: "submit", name: "Submit" },
+      {
+        type: "button", name: "Cancel", onClick(context: any) {
+          context.submitForm({ submitted: false })
+        }
       }
-    },
-    {
-      type: "button", name: "Cancel", onClick(context: any) {
-        context.cancel()
-      }
-    }
-  ])
+    ]
+  })
   console.log(results);
 }
 run();
